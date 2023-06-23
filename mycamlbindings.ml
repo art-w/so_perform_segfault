@@ -1,4 +1,4 @@
-let rec fib n = if n <= 1 then n else fib (n - 1) + fib (n - 2)
+let[@inline never] id x = x
 
 module Stubs (I : Cstubs_inverted.INTERNAL) = struct
   include Ctypes
@@ -10,7 +10,7 @@ module Stubs (I : Cstubs_inverted.INTERNAL) = struct
         let () =
           let open Effect.Deep in
           match_with
-            (fun () -> ignore (fib 5))
+            (fun () -> id ())
             ()
             {
               retc = (fun x -> x);
