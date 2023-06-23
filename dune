@@ -1,0 +1,69 @@
+(library
+  (name mycamlbindings)
+  (libraries ctypes.foreign) ; eio eio_posix)
+  (modules mycamlbindings))
+
+(executable (name gen) (modules gen) (libraries mycamlbindings 
+  ctypes
+  ctypes.foreign
+  ctypes.stubs
+))
+
+(rule
+ (targets mycaml_generated.ml mycaml.c mycaml.h)
+ (deps (:gen ./gen.exe))
+ (action (run %{gen} .)))
+
+(executable
+ (name libmycaml)
+ (package libmycaml)
+ (public_name libmycaml)
+ (libraries mycamlbindings)
+ (flags -g -runtime-variant=d)
+ (modes
+  (native shared_object)
+  native)
+ (modules libmycaml mycaml_generated)
+ (foreign_stubs
+  (language c)
+  (names mycaml)))
+
+
+(install
+ (package libmycaml)
+ (section lib)
+ (files
+  (mycaml.h as include/mycaml.h)
+  (libmycaml.so as lib/libmycaml.so)))
+
+(rule
+  (targets test.exe)
+  (deps
+    (file test.c)
+    (package libmycaml))
+  (action
+    (run
+      %{cc}
+      -I.
+      -o test.exe
+      test.c
+      -L.
+      -lmycaml)))
+
+(rule
+ (alias runtest)
+ (action
+  (setenv
+   DYLD_FALLBACK_LIBRARY_PATH
+   .
+   (setenv
+    LD_LIBRARY_PATH
+    .
+    (run ./test.exe)))))
+
+(env
+ (dev
+  (flags
+   (:standard -w -unused-var-strict))))
+
+
